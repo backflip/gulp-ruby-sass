@@ -11,7 +11,7 @@ var chalk = require('chalk');
 
 module.exports = function (options) {
 	options = options || {};
-	var passedArgs = dargs(options, ['bundleExec']);
+	var passedArgs = dargs(options, ['bundleExec', 'fullException']);
 	var bundleExec = options.bundleExec;
 
 	try {
@@ -84,12 +84,24 @@ module.exports = function (options) {
 
 			cp.on('close', function (code) {
 				if (errors) {
-					self.emit('error', new gutil.PluginError('gulp-ruby-sass', '\n' + errors.replace(inputTempFile, file.path).replace('Use --trace for backtrace.\n', '')));
-					self.push(file);
+					var errorFileRegexp = new RegExp(inputTempFile, 'g');
+					var errorMessage = errors.replace(errorFileRegexp, file.path).replace('Use --trace for backtrace.\n', '');
+
+					if (options.fullException) {
+						self.push(new gutil.File({
+							base: path.dirname(file.path),
+							path: gutil.replaceExtension(file.path, '.css'),
+							contents: new Buffer('head { display: block; padding: 1em 1em 0 1em; } head:after { font-family: sans-serif; font-size: large; font-weight: bold; content: "Error compiling CSS asset"; } body { margin: 0; } body:before { content:"' + errorMessage.replace(/(\r\n|\n|\r)/gm, '\\000a') + '"; display: block; white-space: pre-wrap; font-family: monospace; border-bottom: 1em solid black; padding: 1em; margin-bottom: 1em; } body * { display: none; }')
+						}));
+					} else {
+						self.emit('error', new gutil.PluginError('gulp-ruby-sass', '\n' + errorMessage));
+						self.push(file);
+					}
+
 					return cb();
 				}
 
-				if (code > 0) {
+				if (code > 0 && !options.fullException) {
 					self.emit('error', new gutil.PluginError('gulp-ruby-sass', 'Exited with error code ' + code));
 					self.push(file);
 					return cb();
