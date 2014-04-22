@@ -91,7 +91,7 @@ module.exports = function (options) {
 						self.push(new gutil.File({
 							base: path.dirname(file.path),
 							path: gutil.replaceExtension(file.path, '.css'),
-							contents: new Buffer('head { display: block; padding: 1em 1em 0 1em; } head:after { font-family: sans-serif; font-size: large; font-weight: bold; content: "Error compiling CSS asset"; } body { margin: 0; } body:before { content:"' + errorMessage.replace(/(\r\n|\n|\r)/gm, '\\000a') + '"; display: block; white-space: pre-wrap; font-family: monospace; border-bottom: 1em solid black; padding: 1em; margin-bottom: 1em; } body * { display: none; }')
+							contents: new Buffer('head { display: block; padding: 1em 1em 0 1em; } head:after { font-family: sans-serif; font-size: large; font-weight: bold; content: "Error compiling CSS asset"; } body { margin: 0; } body:before { content:"' + errorMessage.replace(/(\r\n|\n|\r)/gm, '\\000a').replace(/"/g, '\\"') + '"; display: block; white-space: pre-wrap; font-family: monospace; border-bottom: 1em solid black; padding: 1em; margin-bottom: 1em; } body * { display: none; }')
 						}));
 					} else {
 						self.emit('error', new gutil.PluginError('gulp-ruby-sass', '\n' + errorMessage));
